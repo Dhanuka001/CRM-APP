@@ -24,6 +24,10 @@ Reusable middleware (e.g., logging, validation, auth) that can be applied global
 
 Central place for application configuration (env vars, default values). Exported objects should be consumed by server, middleware, and other shared modules.
 
+### `prisma/`
+
+Contains `schema.prisma`, the canonical data model, datasource, and generator definitions for Prisma. Keeping it versioned makes migrations reproducible across environments.
+
 ## Naming convention
 
 We use `camelCase` for file names that export a single function or object (e.g., `statusController.js`, `requestLogger.js`), while folders stay lowercase and descriptive. Core entry points such as `server.js` remain lowercase to match Node.js conventions.
