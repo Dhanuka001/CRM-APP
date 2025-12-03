@@ -4,10 +4,12 @@ const helmet = require('helmet');
 const routes = require('./routes');
 const config = require('./config');
 const errorHandler = require('./middleware/errorHandler');
+const requestLogger = require('./middleware/requestLogger');
 
 const app = express();
 app.use(helmet());
 app.disable('x-powered-by');
+app.use(requestLogger);
 const allowedOrigins = [config.frontendOrigin];
 const corsOptions = {
   origin(origin, callback) {

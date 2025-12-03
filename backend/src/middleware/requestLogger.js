@@ -1,5 +1,10 @@
 const requestLogger = (req, res, next) => {
-  console.info(`${req.method} ${req.originalUrl}`);
+  res.on('finish', () => {
+    console.info(
+      `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${res.statusCode}`
+    );
+  });
+
   next();
 };
 
