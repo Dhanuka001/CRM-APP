@@ -7,4 +7,64 @@ datasource db {
   url = env("DATABASE_URL")
 }
 
-// TODO: define CRM models (users, leads, tasks) once requirements are clear.
+model User {
+  id         Int     @id @default(autoincrement())
+  email      String  @unique
+  name       String?
+  role       String  @default("sales")
+  active     Boolean @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  leads      Lead[]  @relation("LeadOwner")
+  tasks      Task[]
+}
+
+model Lead {
+  id         Int      @id @default(autoincrement())
+  firstName  String
+  lastName   String
+  company    String?
+  email      String   @unique
+  phone      String?
+  status     LeadStatus @default(OPEN)
+  source     String?
+  ownerId    Int?
+  owner      User?    @relation("LeadOwner", fields: [ownerId], references: [id])
+  tasks      Task[]   @relation("LeadTasks")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  dueDate     DateTime?
+  status      TaskStatus @default(PENDING)
+  priority    Priority   @default(MEDIUM)
+  leadId      Int?
+  lead        Lead?      @relation("LeadTasks", fields: [leadId], references: [id])
+  assigneeId  Int?
+  assignee    User?      @relation(fields: [assigneeId], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+enum LeadStatus {
+  OPEN
+  QUALIFIED
+  CONVERTED
+  LOST
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
