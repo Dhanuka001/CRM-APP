@@ -1,10 +1,13 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const routes = require('./routes');
 const config = require('./config');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
+app.use(helmet());
+app.disable('x-powered-by');
 const allowedOrigins = [config.frontendOrigin];
 const corsOptions = {
   origin(origin, callback) {
