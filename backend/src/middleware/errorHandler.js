@@ -1,3 +1,5 @@
+const config = require('../config');
+
 const errorHandler = (err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const payload = {
@@ -7,6 +9,10 @@ const errorHandler = (err, req, res, next) => {
 
   if (err.details) {
     payload.details = err.details;
+  }
+
+  if (config.env === 'development' && err.stack) {
+    payload.stack = err.stack;
   }
 
   res.status(statusCode).json(payload);
