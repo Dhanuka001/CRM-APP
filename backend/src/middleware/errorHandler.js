@@ -1,6 +1,6 @@
 const config = require('../config');
 
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res) => {
   const statusCode = err.statusCode || 500;
   const payload = {
     message: err.message || 'Internal Server Error',
