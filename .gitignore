@@ -1,0 +1,34 @@
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sw?
+*.swo
+
+# Node
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Logs and runtime data
+*.log
+.log/
+.tmp/
+.cache/
+coverage/
+
+# Env files
+*.env
+.env.*
+
+# Build outputs
+dist/
+build/
+
+# Lockfiles that are regenerated
+frontend/package-lock.json
