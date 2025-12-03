@@ -15,6 +15,7 @@ const config = {
   env: process.env.NODE_ENV || 'development',
   databaseUrl: process.env.DATABASE_URL || 'postgres://localhost:5432/crm',
   jwtSecret: requireEnv('JWT_SECRET'),
+  frontendOrigin: process.env.FRONTEND_ORIGIN || 'http://localhost:3000',
 };
 
 module.exports = config;
