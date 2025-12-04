@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { successResponse, errorResponse } = require('../utils/responseHelper');
+const { signToken } = require('../utils/jwt');
 
 const prisma = new PrismaClient();
 
@@ -14,8 +14,6 @@ const sanitizeUser = (user) => ({
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
-
-const JWT_SECRET = process.env.JWT_SECRET;
 
 const register = async (req, res) => {
   try {
@@ -71,15 +69,7 @@ const login = async (req, res) => {
       return errorResponse(res, 'Invalid credentials', 401);
     }
 
-    if (!JWT_SECRET) {
-      return errorResponse(res, 'Missing JWT secret', 500);
-    }
-
-    const token = jwt.sign(
-      { userId: user.id, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '2h' },
-    );
+    const token = signToken({ userId: user.id, role: user.role });
 
     return successResponse(
       res,
