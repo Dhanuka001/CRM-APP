@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const { successResponse, errorResponse } = require('../utils/responseHelper');
 const { signToken } = require('../utils/jwt');
+const authErrors = require('../constants/authErrors');
 
 const prisma = new PrismaClient();
 
@@ -24,7 +25,7 @@ const register = async (req, res) => {
     const { email, password, name, role } = req.body;
 
     if (!email || !password) {
-      return errorResponse(res, 'Email and password are required', 400);
+      return errorResponse(res, authErrors.MISSING_CREDENTIALS, 400);
     }
 
     if (!isValidEmail(email)) {
@@ -67,7 +68,7 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return errorResponse(res, 'Email and password are required', 400);
+      return errorResponse(res, authErrors.MISSING_CREDENTIALS, 400);
     }
 
     if (!isValidEmail(email)) {
@@ -89,12 +90,12 @@ const login = async (req, res) => {
     });
 
     if (!user) {
-      return errorResponse(res, 'Invalid credentials', 401);
+      return errorResponse(res, authErrors.INVALID_CREDENTIALS, 401);
     }
 
     const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
     if (!passwordsMatch) {
-      return errorResponse(res, 'Invalid credentials', 401);
+      return errorResponse(res, authErrors.INVALID_CREDENTIALS, 401);
     }
 
     const token = signToken({ userId: user.id, role: user.role });

@@ -1,16 +1,17 @@
 const { errorResponse } = require('../utils/responseHelper');
 const { verifyToken } = require('../utils/jwt');
+const authErrors = require('../constants/authErrors');
 
 const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || typeof authHeader !== 'string') {
-    return errorResponse(res, 'Authorization header missing', 401);
+    return errorResponse(res, authErrors.AUTH_HEADER_MISSING, 401);
   }
 
   const [scheme, token] = authHeader.split(' ');
   if (scheme !== 'Bearer' || !token) {
-    return errorResponse(res, 'Authorization header malformed', 401);
+    return errorResponse(res, authErrors.AUTH_HEADER_MALFORMED, 401);
   }
 
   try {
@@ -21,7 +22,7 @@ const authMiddleware = (req, res, next) => {
     };
     return next();
   } catch (error) {
-    return errorResponse(res, 'Invalid or expired token', 401);
+    return errorResponse(res, authErrors.INVALID_TOKEN, 401);
   }
 };
 

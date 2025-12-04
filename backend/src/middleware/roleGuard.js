@@ -1,9 +1,10 @@
 const { errorResponse } = require('../utils/responseHelper');
+const authErrors = require('../constants/authErrors');
 
 const requireRole = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return errorResponse(res, 'Unauthorized', 401);
+      return errorResponse(res, authErrors.UNAUTHORIZED, 401);
     }
 
     if (!roles.length) {
@@ -11,7 +12,7 @@ const requireRole = (...roles) => {
     }
 
     if (!roles.includes(req.user.role)) {
-      return errorResponse(res, 'Forbidden', 403);
+      return errorResponse(res, authErrors.FORBIDDEN, 403);
     }
 
     return next();
