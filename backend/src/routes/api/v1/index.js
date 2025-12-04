@@ -1,5 +1,5 @@
 const express = require('express');
-const authRoutes = require('./authRoutes');
+const authRoutes = require('./auth');
 const leadsRoutes = require('./leadsRoutes');
 const tasksRoutes = require('./tasksRoutes');
 const { version } = require('../../../../package.json');
