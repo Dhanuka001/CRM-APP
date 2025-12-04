@@ -15,12 +15,28 @@ const sanitizeUser = (user) => ({
   updatedAt: user.updatedAt,
 });
 
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const isStrongPassword = (value) =>
+  typeof value === 'string' && value.length >= 8;
+
 const register = async (req, res) => {
   try {
     const { email, password, name, role } = req.body;
 
     if (!email || !password) {
       return errorResponse(res, 'Email and password are required', 400);
+    }
+
+    if (!isValidEmail(email)) {
+      return errorResponse(res, 'Invalid email format', 400);
+    }
+
+    if (!isStrongPassword(password)) {
+      return errorResponse(
+        res,
+        'Password must be at least 8 characters',
+        400,
+      );
     }
 
     const normalizedEmail = String(email).trim().toLowerCase();
@@ -52,6 +68,18 @@ const login = async (req, res) => {
 
     if (!email || !password) {
       return errorResponse(res, 'Email and password are required', 400);
+    }
+
+    if (!isValidEmail(email)) {
+      return errorResponse(res, 'Invalid email format', 400);
+    }
+
+    if (!isStrongPassword(password)) {
+      return errorResponse(
+        res,
+        'Password must be at least 8 characters',
+        400,
+      );
     }
 
     const normalizedEmail = String(email).trim().toLowerCase();
