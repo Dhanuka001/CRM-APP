@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { successResponse, errorResponse } = require('../utils/responseHelper');
 
@@ -13,6 +14,8 @@ const sanitizeUser = (user) => ({
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const register = async (req, res) => {
   try {
@@ -45,4 +48,47 @@ const register = async (req, res) => {
   }
 };
 
-module.exports = { register };
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return errorResponse(res, 'Email and password are required', 400);
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (!user) {
+      return errorResponse(res, 'Invalid credentials', 401);
+    }
+
+    const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!passwordsMatch) {
+      return errorResponse(res, 'Invalid credentials', 401);
+    }
+
+    if (!JWT_SECRET) {
+      return errorResponse(res, 'Missing JWT secret', 500);
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '2h' },
+    );
+
+    return successResponse(
+      res,
+      { token, user: sanitizeUser(user) },
+      'Login successful',
+    );
+  } catch (error) {
+    return errorResponse(res, 'Unable to complete login', 500, error.message);
+  }
+};
+
+module.exports = { register, login };
