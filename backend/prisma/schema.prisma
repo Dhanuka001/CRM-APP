@@ -7,48 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id         Int     @id @default(autoincrement())
-  email      String  @unique
-  name       String?
-  passwordHash String
-  role       String  @default("sales")
-  active     Boolean @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  leads      Lead[]  @relation("LeadOwner")
-  tasks      Task[]
-}
-
-model Lead {
-  id         Int      @id @default(autoincrement())
-  firstName  String
-  lastName   String
-  company    String?
-  email      String   @unique
-  phone      String?
-  status     LeadStatus @default(OPEN)
-  source     String?
-  ownerId    Int?
-  owner      User?    @relation("LeadOwner", fields: [ownerId], references: [id])
-  tasks      Task[]   @relation("LeadTasks")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-
-model Task {
-  id          Int       @id @default(autoincrement())
-  title       String
-  description String?
-  dueDate     DateTime?
-  status      TaskStatus @default(PENDING)
-  priority    Priority   @default(MEDIUM)
-  leadId      Int?
-  lead        Lead?      @relation("LeadTasks", fields: [leadId], references: [id])
-  assigneeId  Int?
-  assignee    User?      @relation(fields: [assigneeId], references: [id])
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+enum UserRole {
+  ADMIN
+  MANAGER
+  AGENT
 }
 
 enum LeadStatus {
@@ -68,4 +30,75 @@ enum Priority {
   LOW
   MEDIUM
   HIGH
+}
+
+model PipelineStage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  order     Int
+  isFinal   Boolean  @default(false)
+  leads     Lead[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  passwordHash String
+  name         String?
+  role         UserRole      @default(AGENT)
+  active       Boolean       @default(true)
+  leads        Lead[]        @relation("LeadOwner")
+  tasks        Task[]        @relation("TaskAssignee")
+  activityLogs ActivityLog[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Lead {
+  id            Int             @id @default(autoincrement())
+  title         String
+  company       String?
+  contactEmail  String?
+  contactPhone  String?
+  value         Float?
+  status        LeadStatus      @default(OPEN)
+  ownerId       Int?
+  owner         User?           @relation("LeadOwner", fields: [ownerId], references: [id])
+  stageId       Int?
+  stage         PipelineStage?  @relation(fields: [stageId], references: [id])
+  tasks         Task[]          @relation("LeadTasks")
+  activityLogs  ActivityLog[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model Task {
+  id           Int           @id @default(autoincrement())
+  title        String
+  description  String?
+  status       TaskStatus      @default(PENDING)
+  priority     Priority        @default(MEDIUM)
+  dueDate      DateTime?
+  assignedToId Int?
+  assignedTo   User?           @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  leadId       Int?
+  lead         Lead?           @relation("LeadTasks", fields: [leadId], references: [id])
+  activityLogs ActivityLog[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+model ActivityLog {
+  id        Int       @id @default(autoincrement())
+  type      String
+  message   String
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  leadId    Int?
+  lead      Lead?     @relation(fields: [leadId], references: [id])
+  taskId    Int?
+  task      Task?     @relation(fields: [taskId], references: [id])
+  createdAt DateTime  @default(now())
 }
