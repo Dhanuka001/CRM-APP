@@ -6,6 +6,16 @@ const authErrors = require('../constants/authErrors');
 
 const prisma = new PrismaClient();
 
+const logActivity = async ({ userId, type, message }) => {
+  try {
+    await prisma.activityLog.create({
+      data: { userId, type, message },
+    });
+  } catch (error) {
+    console.error('Failed to record activity log', error);
+  }
+};
+
 const sanitizeUser = (user) => ({
   id: user.id,
   email: user.email,
@@ -51,6 +61,12 @@ const register = async (req, res) => {
         name: name ? String(name).trim() : null,
         role: role || undefined,
       },
+    });
+
+    await logActivity({
+      userId: user.id,
+      type: 'AUTH_REGISTRATION',
+      message: 'User registered via auth endpoint',
     });
 
     return successResponse(res, sanitizeUser(user), 'User registered', 201);
@@ -100,6 +116,12 @@ const login = async (req, res) => {
 
     const token = signToken({ userId: user.id, role: user.role });
 
+    await logActivity({
+      userId: user.id,
+      type: 'AUTH_LOGIN',
+      message: 'User logged in successfully',
+    });
+
     return successResponse(
       res,
       { token, user: sanitizeUser(user) },
@@ -110,4 +132,22 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+const logout = async (req, res) => {
+  if (!req.user || !req.user.id) {
+    return errorResponse(res, authErrors.UNAUTHORIZED, 401);
+  }
+
+  await logActivity({
+    userId: req.user.id,
+    type: 'AUTH_LOGOUT',
+    message: 'User logged out via auth endpoint',
+  });
+
+  return successResponse(
+    res,
+    null,
+    'Logout successful; remove the token client-side',
+  );
+};
+
+module.exports = { register, login, logout };
