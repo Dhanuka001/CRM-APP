@@ -1,30 +1,10 @@
-const bcrypt = require('bcryptjs');
-const { PrismaClient } = require('@prisma/client');
 const { successResponse, errorResponse } = require('../utils/responseHelper');
-const { signToken } = require('../utils/jwt');
 const authErrors = require('../constants/authErrors');
-
-const prisma = new PrismaClient();
-
-const logActivity = async ({ userId, type, message }) => {
-  try {
-    await prisma.activityLog.create({
-      data: { userId, type, message },
-    });
-  } catch (error) {
-    console.error('Failed to record activity log', error);
-  }
-};
-
-const sanitizeUser = (user) => ({
-  id: user.id,
-  email: user.email,
-  name: user.name,
-  role: user.role,
-  active: user.active,
-  createdAt: user.createdAt,
-  updatedAt: user.updatedAt,
-});
+const {
+  registerUser,
+  loginUser,
+  logoutUser,
+} = require('../services/authService');
 
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 const isStrongPassword = (value) =>
@@ -50,26 +30,9 @@ const register = async (req, res) => {
       );
     }
 
-    const normalizedEmail = String(email).trim().toLowerCase();
+    const user = await registerUser({ email, password, name, role });
 
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const user = await prisma.user.create({
-      data: {
-        email: normalizedEmail,
-        passwordHash,
-        name: name ? String(name).trim() : null,
-        role: role || undefined,
-      },
-    });
-
-    await logActivity({
-      userId: user.id,
-      type: 'AUTH_REGISTRATION',
-      message: 'User registered via auth endpoint',
-    });
-
-    return successResponse(res, sanitizeUser(user), 'User registered', 201);
+    return successResponse(res, user, 'User registered', 201);
   } catch (error) {
     if (error?.code === 'P2002' && error?.meta?.target?.includes('email')) {
       return errorResponse(res, 'Email already registered', 409);
@@ -99,55 +62,38 @@ const login = async (req, res) => {
       );
     }
 
-    const normalizedEmail = String(email).trim().toLowerCase();
+    const payload = await loginUser({ email, password });
 
-    const user = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-    });
-
-    if (!user) {
-      return errorResponse(res, authErrors.INVALID_CREDENTIALS, 401);
-    }
-
-    const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!passwordsMatch) {
-      return errorResponse(res, authErrors.INVALID_CREDENTIALS, 401);
-    }
-
-    const token = signToken({ userId: user.id, role: user.role });
-
-    await logActivity({
-      userId: user.id,
-      type: 'AUTH_LOGIN',
-      message: 'User logged in successfully',
-    });
-
-    return successResponse(
-      res,
-      { token, user: sanitizeUser(user) },
-      'Login successful',
-    );
+    return successResponse(res, payload, 'Login successful');
   } catch (error) {
+    if (error?.message === authErrors.INVALID_CREDENTIALS) {
+      return errorResponse(res, authErrors.INVALID_CREDENTIALS, 401);
+    }
+
     return errorResponse(res, 'Unable to complete login', 500, error.message);
   }
 };
 
 const logout = async (req, res) => {
-  if (!req.user || !req.user.id) {
-    return errorResponse(res, authErrors.UNAUTHORIZED, 401);
+  try {
+    if (!req.user || !req.user.id) {
+      return errorResponse(res, authErrors.UNAUTHORIZED, 401);
+    }
+
+    await logoutUser(req.user.id);
+
+    return successResponse(
+      res,
+      null,
+      'Logout successful; remove the token client-side',
+    );
+  } catch (error) {
+    if (error?.message === authErrors.UNAUTHORIZED) {
+      return errorResponse(res, authErrors.UNAUTHORIZED, 401);
+    }
+
+    return errorResponse(res, 'Unable to complete logout', 500, error.message);
   }
-
-  await logActivity({
-    userId: req.user.id,
-    type: 'AUTH_LOGOUT',
-    message: 'User logged out via auth endpoint',
-  });
-
-  return successResponse(
-    res,
-    null,
-    'Logout successful; remove the token client-side',
-  );
 };
 
 module.exports = { register, login, logout };
